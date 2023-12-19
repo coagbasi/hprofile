@@ -52,6 +52,7 @@ jobs:
 
 
   BUILD_AND_PUBLISH:
+    needs: Testing
     runs-on: ubuntu-latest
     steps:
       - name: Code Checkout
