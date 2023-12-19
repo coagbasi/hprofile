@@ -2,6 +2,11 @@ name: Hprofile Actions
 on: workflow_dispatch
 env:
   AWS_REGION: us-east-1
+  ECR_REPO: gitactions-app
+  ECS_SVC: vproapp-act-svc
+  ECS_CLTR: vproapp-act
+  ECS_TASKDEF: vproapp-act-tdef
+  CONTAINER: vproapp
 jobs:
   Testing:
     runs-on: ubuntu-latest
@@ -76,3 +81,33 @@ jobs:
           daemon_off: false
           dockerfile: ./Dockerfile
           context: ./
+
+  Deploy :
+    needs: BUILD_AND_PUBLISH
+    runs-on: ubuntu-latest
+    steps:
+      - name: Code Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+      - name: Fill in the new image ID in the Amazon ECS task definition
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ${{ env.ECS_TASKDEF }}
+          container-name: ${{ env.CONTAINER }}
+          image: ${{ secrets.REGISTRY }}/${{ env.ECR_REPO }}:${{ github.run_number }}
+
+      - name: Deploy Amazon ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: {{ env.ECS_SVC }}
+          cluster: {{ env.ECS_CLTR }}
+          wait-for-service-stability: true
