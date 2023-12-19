@@ -5,7 +5,7 @@ env:
   ECR_REPO: gitactions-app
   ECS_SVC: vproapp-act-svc
   ECS_CLTR: vproapp-act
-  ECS_TASKDEF: vproapp-act-tdef
+  ECS_TASKDEF: aws-files/taskdeffile.json
   CONTAINER: vproapp
 jobs:
   Testing:
